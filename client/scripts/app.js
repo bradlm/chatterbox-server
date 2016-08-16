@@ -1,4 +1,5 @@
 
+
 var app = {
 
   //TODO: The current 'toggleFriend' function just toggles the class 'friend'
@@ -20,7 +21,7 @@ var app = {
     app.$send = $('#send');
 
     // Add listeners
-    app.$chats.on('click', '.username', app.toggleFriend);
+    app.$chats.on('click', '.username', app.addFriend);
     app.$send.on('submit', app.handleSubmit);
     app.$roomSelect.on('change', app.saveRoom);
 
@@ -36,7 +37,6 @@ var app = {
     app.startSpinner();
     // Clear messages input
     app.$message.val('');
-
     // POST the message to the server
     $.ajax({
       url: app.server,
@@ -49,6 +49,7 @@ var app = {
       },
       error: function (data) {
         console.error('chatterbox: Failed to send message', data);
+        app.fetch(); //comment this out later
       }
     });
   },
@@ -91,7 +92,6 @@ var app = {
 
   populateMessages: function(results, animate) {
     // Clear existing messages
-
     app.clearMessages();
     app.stopSpinner();
     if (Array.isArray(results)) {
@@ -111,7 +111,7 @@ var app = {
   },
 
   populateRooms: function(results) {
-    app.$roomSelect.html('<option value="__newRoom">New room...</option><option value="" selected>Lobby</option></select>');
+    app.$roomSelect.html('<option value="__newRoom">New room...</option>');
 
     if (results) {
       var rooms = {};
@@ -167,7 +167,7 @@ var app = {
     }
   },
 
-  toggleFriend: function(evt) {
+  addFriend: function(evt) {
     var username = $(evt.currentTarget).attr('data-username');
 
     if (username !== undefined) {

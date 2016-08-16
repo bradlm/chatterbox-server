@@ -16,7 +16,10 @@ this file and include it in basic-server.js so that it actually works.
 //
 // Another way to get around this restriction is to serve you chat
 // client from this domain by setting up static file serving.
-var database = [];
+var database = [{ username: 'admin',
+      text: 'welcome',
+      roomname: 'lobby', 
+      objectId: 0 }];
 var defaultCorsHeaders = {
   'access-control-allow-origin': '*',
   'access-control-allow-methods': 'GET, POST, PUT, DELETE, OPTIONS',
@@ -65,14 +68,17 @@ module.exports.requestHandler = function(request, response) {
 
   if (request.url === '/classes/messages') {
     if (request.method === 'OPTIONS') {
-      response.writeHead(statusCode, headers);
-      response.end();
+      //console.log('------------------------------------')
+      //response.writeHead(statusCode, headers);
+      //response.end();
     } else if (request.method === 'POST') {
-      request.on('data', function(chunk) {
-        chunk[createdAt] = new Date();
-        database.push(JSON.parse(chunk));
-      });
       statusCode = 201;
+      request.on('data', function(chunk) {
+        var message = JSON.parse(chunk);
+        message['objectId'] = database.length; 
+        database.push(message);
+        //console.log('----------------------------------------', database);
+      });
     } else if (request.method === 'GET') {
       var json = JSON.stringify({
         results: database
