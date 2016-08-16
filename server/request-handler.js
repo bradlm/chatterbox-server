@@ -16,8 +16,13 @@ this file and include it in basic-server.js so that it actually works.
 //
 // Another way to get around this restriction is to serve you chat
 // client from this domain by setting up static file serving.
-  var database = [];
-
+var database = [];
+var defaultCorsHeaders = {
+  'access-control-allow-origin': '*',
+  'access-control-allow-methods': 'GET, POST, PUT, DELETE, OPTIONS',
+  'access-control-allow-headers': 'content-type, accept',
+  'access-control-max-age': 10// Seconds.
+};
 
 
 module.exports.requestHandler = function(request, response) {
@@ -40,12 +45,7 @@ module.exports.requestHandler = function(request, response) {
   // The outgoing status.
   var statusCode = 200;
 
-  var defaultCorsHeaders = {
-    'access-control-allow-origin': '*',
-    'access-control-allow-methods': 'GET, POST, PUT, DELETE, OPTIONS',
-    'access-control-allow-headers': 'content-type, accept',
-    'access-control-max-age': 10 // Seconds.
-  };
+ 
 
   // See the note below about CORS headers.
   var headers = defaultCorsHeaders;
@@ -63,24 +63,29 @@ module.exports.requestHandler = function(request, response) {
 
 
 
-
-
-  if (request.method === 'POST') {
-    request.on('data', function(chunk) {
-      database.push(JSON.parse(chunk));
-    });
-
-    response.writeHead(201, {'Content-Type': 'application/json'});
-    //console.log(request._data);
-
-
+  if (request.url === '/classes/messages') {
+    if (request.method === 'OPTIONS') {
+      response.writeHead(statusCode, headers);
+      response.end();
+    } else if (request.method === 'POST') {
+      request.on('data', function(chunk) {
+        chunk[createdAt] = new Date();
+        database.push(JSON.parse(chunk));
+      });
+      statusCode = 201;
+    } else if (request.method === 'GET') {
+      var json = JSON.stringify({
+        results: database
+      });
+    }
   } else {
-    response.writeHead(200, {'Content-Type': 'application/json'});
+    statusCode = 404;
+
   }
 
-  var json = JSON.stringify({
-    results: database
-  });
+
+  response.writeHead(statusCode, headers);
+
 
   // Make sure to always call response.end() - Node may not send
   // anything back to the client until you do. The string you pass to
@@ -91,3 +96,6 @@ module.exports.requestHandler = function(request, response) {
   // node to actually send all the data over to the client.
   response.end(json);
 };
+
+
+ 
