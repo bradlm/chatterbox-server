@@ -17,6 +17,7 @@ this file and include it in basic-server.js so that it actually works.
 //
 // Another way to get around this restriction is to serve you chat
 // client from this domain by setting up static file serving.
+var fs = require('fs');
 var database = [{ username: 'admin',
       text: 'welcome',
       roomname: 'lobby', 
@@ -30,7 +31,6 @@ var defaultCorsHeaders = {
 
 
 module.exports.requestHandler = function(request, response) {
-  fs.createReadStream('./client/index.html').pipe(response);
   // Request and Response come from node's http module.
   //
   // They include information about both the incoming request, such as
@@ -67,12 +67,12 @@ module.exports.requestHandler = function(request, response) {
 
 
 
-
+  var json = '';
   if (request.url === '/classes/messages') {
     if (request.method === 'OPTIONS') {
       //console.log('------------------------------------')
-      //response.writeHead(statusCode, headers);
-      //response.end();
+      response.writeHead(statusCode, headers);
+      response.end();
     } else if (request.method === 'POST') {
       statusCode = 201;
       var body;
@@ -81,21 +81,35 @@ module.exports.requestHandler = function(request, response) {
       }).on('end', function() {
         body['objectId'] = database.length;
         database.push(body);
+        fs.writeFile('store.txt', JSON.stringify(database));
+        database.push(body);
+        response.writeHead(statusCode, headers);
+        json = JSON.stringify({response: 'received'});
         //console.log('----------------------------------------', database);
+        response.end(json);
       });
-      var json = JSON.stringify({reponse: 'received'});
     } else if (request.method === 'GET') {
-      var json = JSON.stringify({
-        results: database
+      //var dat = [];
+      fs.readFile('store.txt', function(error, data) {
+        
+        var dat = JSON.parse('' + data);
+        json = JSON.stringify({
+          results: dat
+        });
+        console.log('JSON', json);
+        response.writeHead(statusCode, headers);
+        response.end(json);
       });
+ 
     }
   } else {
     statusCode = 404;
-
+    response.writeHead(statusCode, headers);
+    response.end({hi: 'ih'});
   }
 
 
-  response.writeHead(statusCode, headers);
+  //response.writeHead(statusCode, headers);
 
 
   // Make sure to always call response.end() - Node may not send
@@ -105,7 +119,7 @@ module.exports.requestHandler = function(request, response) {
   //
   // Calling .end "flushes" the response's internal buffer, forcing
   // node to actually send all the data over to the client.
-  response.end(json);
+  //response.end(json);
 };
 
 
