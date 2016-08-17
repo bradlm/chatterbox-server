@@ -1,3 +1,4 @@
+
 /*************************************************************
 You should implement your request handler function in this file.
 requestHandler is already getting passed to http.createServer()
@@ -29,6 +30,7 @@ var defaultCorsHeaders = {
 
 
 module.exports.requestHandler = function(request, response) {
+  fs.createReadStream('./client/index.html').pipe(response);
   // Request and Response come from node's http module.
   //
   // They include information about both the incoming request, such as
@@ -73,12 +75,15 @@ module.exports.requestHandler = function(request, response) {
       //response.end();
     } else if (request.method === 'POST') {
       statusCode = 201;
+      var body;
       request.on('data', function(chunk) {
-        var message = JSON.parse(chunk);
-        message['objectId'] = database.length; 
-        database.push(message);
+        body = JSON.parse(chunk);
+      }).on('end', function() {
+        body['objectId'] = database.length;
+        database.push(body);
         //console.log('----------------------------------------', database);
       });
+      var json = JSON.stringify({reponse: 'received'});
     } else if (request.method === 'GET') {
       var json = JSON.stringify({
         results: database
