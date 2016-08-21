@@ -1,3 +1,40 @@
+const util = require('./util.js');
+let objCount = 0;
+let msgs = [
+  // {
+  //   text: 'Welcome to chatterbox!',
+  //   username: 'ChatterboxBot',
+  //   objectId: ++objCount
+  // }
+];
+const resSend = util.resSend;
+const actionMap = {
+  GET (req, res) {
+    resSend(res, {results: msgs});
+  }, 
+  POST (req, res) {
+    util.datGet(req, msg => {
+      msg.objectId = ++objCount;
+      msgs.push(msg);
+      resSend(res, {objectId: msg.objectId}, 201);
+    });
+  },
+  OPTIONS (req, res) {
+    resSend(res, null);
+  }
+};
+module.exports = {
+  requestHandler: util.makeHandler(actionMap),
+  serveAsset(req, res) {
+    util.read('./client', 'index.html', (err, data) => {
+      err ? 
+        console.log(err) 
+        : util.resSendHtml(res, data);
+    });
+  }
+};
+
+
 
 /*************************************************************
 You should implement your request handler function in this file.
@@ -17,110 +54,33 @@ this file and include it in basic-server.js so that it actually works.
 //
 // Another way to get around this restriction is to serve you chat
 // client from this domain by setting up static file serving.
-var fs = require('fs');
-var database = [{ username: 'admin',
-      text: 'welcome',
-      roomname: 'lobby', 
-      objectId: 0 }];
-var defaultCorsHeaders = {
-  'access-control-allow-origin': '*',
-  'access-control-allow-methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'access-control-allow-headers': 'content-type, accept',
-  'access-control-max-age': 10// Seconds.
-};
 
 
-module.exports.requestHandler = function(request, response) {
-  // Request and Response come from node's http module.
-  //
-  // They include information about both the incoming request, such as
-  // headers and URL, and about the outgoing response, such as its status
-  // and content.
-  //
-  // Documentation for both request and response can be found in the HTTP section at
-  // http://nodejs.org/documentation/api/
+// Request and Response come from node's http module.
+//
+// They include information about both the incoming request, such as
+// headers and URL, and about the outgoing response, such as its status
+// and content.
+//
+// Documentation for both request and response can be found in the HTTP section at
+// http://nodejs.org/documentation/api/
+// See the note below about CORS headers.
 
-  // Do some basic logging.
-  //
-  // Adding more logging to your server can be an easy way to get passive
-  // debugging help, but you should always be careful about leaving stray
-  // console.logs in your code.
-  console.log('Serving request type ' + request.method + ' for url ' + request.url); 
+// Tell the client we are sending them plain text.
+//
+// You will need to change this if you are sending something
+// other than plain text, like JSON or HTML.
 
-  // The outgoing status.
-  var statusCode = 200;
-
- 
-
-  // See the note below about CORS headers.
-  var headers = defaultCorsHeaders;
-
-  // Tell the client we are sending them plain text.
-  //
-  // You will need to change this if you are sending something
-  // other than plain text, like JSON or HTML.
-  headers['Content-Type'] = 'application/json';
-
-
-  // .writeHead() writes to the request line and headers of the response,
-  // which includes the status and all headers.
+// .writeHead() writes to the request line and headers of the response,
+// which includes the status and all headers.
+// Make sure to always call response.end() - Node may not send
+// anything back to the client until you do. The string you pass to
+// response.end() will be the body of the response - i.e. what shows
+// up in the browser.
+//
+// Calling .end "flushes" the response's internal buffer, forcing
+// node to actually send all the data over to the client.
+//response.end(json);
 
 
 
-  var json = '';
-  if (request.url === '/classes/messages') {
-    if (request.method === 'OPTIONS') {
-      //console.log('------------------------------------')
-      response.writeHead(statusCode, headers);
-      response.end();
-    } else if (request.method === 'POST') {
-      statusCode = 201;
-      var body;
-      request.on('data', function(chunk) {
-        body = JSON.parse(chunk);
-      }).on('end', function() {
-        body['objectId'] = database.length;
-        database.push(body);
-        fs.writeFile('store.txt', JSON.stringify(database));
-        database.push(body);
-        response.writeHead(statusCode, headers);
-        json = JSON.stringify({response: 'received'});
-        //console.log('----------------------------------------', database);
-        response.end(json);
-      });
-    } else if (request.method === 'GET') {
-      //var dat = [];
-      fs.readFile('store.txt', function(error, data) {
-        
-        var dat = JSON.parse('' + data);
-        json = JSON.stringify({
-          results: dat
-        });
-        console.log('JSON', json);
-        response.writeHead(statusCode, headers);
-        response.end(json);
-      });
- 
-    }
-  } else {
-    statusCode = 404;
-    response.writeHead(statusCode, headers);
-    response.end({hi: 'ih'});
-  }
-
-
-  //response.writeHead(statusCode, headers);
-
-
-  // Make sure to always call response.end() - Node may not send
-  // anything back to the client until you do. The string you pass to
-  // response.end() will be the body of the response - i.e. what shows
-  // up in the browser.
-  //
-  // Calling .end "flushes" the response's internal buffer, forcing
-  // node to actually send all the data over to the client.
-  //response.end(json);
-};
-
-
- 
